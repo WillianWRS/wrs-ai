@@ -1,0 +1,21 @@
+spring:
+  application:
+    name: ai
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ai
+    username: ai
+    password: ai
+
+  ai:
+    google:
+      genai:
+        api-key: ${GOOGLE_API_KEY}
+        embedding:
+          api-key: ${GOOGLE_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+    vectorstore:
+      pgvector:
+        initialize-schema: true
