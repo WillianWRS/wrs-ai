@@ -1,53 +1,30 @@
 package wrs.ai.controller;
 
-import java.nio.charset.StandardCharsets;
-import java.util.List;
-
-import org.springframework.ai.document.Document;
-import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
-import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
-import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import wrs.ai.dto.DocumentRequest;
 import wrs.ai.dto.DocumentResponse;
+import wrs.ai.service.DocumentService;
 
 @RestController
 @RequestMapping("/api/documents")
-@ConditionalOnBean(VectorStore.class)
+@ConditionalOnBean(DocumentService.class)
 public class DocumentController {
 
-	private final VectorStore vectorStore;
+	private final DocumentService documentService;
 
-	public DocumentController(VectorStore vectorStore) {
-		this.vectorStore = vectorStore;
+	public DocumentController(DocumentService documentService) {
+		this.documentService = documentService;
 	}
 
 	@PostMapping
 	public Mono<DocumentResponse> ingest(@RequestBody DocumentRequest request) {
-		return Mono.fromCallable(() -> {
-			String filename = StringUtils.hasText(request.filename()) ? request.filename() : "document.md";
-			var resource = new ByteArrayResource(request.content().getBytes(StandardCharsets.UTF_8)) {
-				@Override
-				public String getFilename() {
-					return filename;
-				}
-			};
-			var config = MarkdownDocumentReaderConfig.builder()
-					.withAdditionalMetadata("filename", filename)
-					.build();
-			List<Document> documents = new MarkdownDocumentReader(resource, config).get();
-			vectorStore.add(documents);
-			return new DocumentResponse(documents.size());
-		}).subscribeOn(Schedulers.boundedElastic());
+		return documentService.ingest(request);
 	}
 
 }
