@@ -1,6 +1,5 @@
 package wrs.ai.controller;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -13,7 +12,6 @@ import wrs.ai.service.ChatService;
 
 @RestController
 @RequestMapping("/api/chat")
-@ConditionalOnBean(ChatService.class)
 public class ChatController {
 
 	private final ChatService chatService;

@@ -1,7 +1,7 @@
 package wrs.ai.service;
 
 import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
@@ -10,12 +10,11 @@ import wrs.ai.dto.ChatRequest;
 import wrs.ai.dto.ChatResponse;
 
 @Service
-@ConditionalOnBean(ChatClient.class)
 public class ChatService {
 
 	private final ChatClient chatClient;
 
-	public ChatService(ChatClient chatClient) {
+	public ChatService(@Qualifier("chatClient") ChatClient chatClient) {
 		this.chatClient = chatClient;
 	}
 

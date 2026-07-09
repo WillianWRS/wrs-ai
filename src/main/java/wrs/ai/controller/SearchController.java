@@ -1,5 +1,6 @@
 package wrs.ai.controller;
 
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +14,7 @@ import wrs.ai.service.SearchService;
 
 @RestController
 @RequestMapping("/api/search")
-@ConditionalOnBean(SearchService.class)
+@ConditionalOnBean(VectorStore.class)
 public class SearchController {
 
 	private final SearchService searchService;

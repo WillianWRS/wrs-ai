@@ -1,5 +1,6 @@
 package wrs.ai.controller;
 
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,7 +14,7 @@ import wrs.ai.service.RagService;
 
 @RestController
 @RequestMapping("/api/rag")
-@ConditionalOnBean(RagService.class)
+@ConditionalOnBean(VectorStore.class)
 public class RagController {
 
 	private final RagService ragService;

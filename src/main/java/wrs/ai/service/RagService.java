@@ -1,6 +1,7 @@
 package wrs.ai.service;
 
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.stereotype.Service;
@@ -11,7 +12,7 @@ import wrs.ai.dto.ChatRequest;
 import wrs.ai.dto.ChatResponse;
 
 @Service
-@ConditionalOnBean(name = "ragChatClient")
+@ConditionalOnBean(VectorStore.class)
 public class RagService {
 
 	private final ChatClient ragChatClient;
