@@ -3,6 +3,10 @@ spring:
     url: jdbc:postgresql://postgres:5432/ai
 
   ai:
+    chat:
+      client:
+        tool-calling:
+          enabled: false
     model:
       embedding:
         text: none
@@ -12,3 +16,4 @@ spring:
       genai:
         chat:
           model: gemini-2.0-flash
+          enable-cached-content: false
