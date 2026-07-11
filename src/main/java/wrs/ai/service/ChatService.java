@@ -1,5 +1,6 @@
 package wrs.ai.service;
 
+import org.springframework.ai.chat.client.AdvisorParams;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ public class ChatService {
 
 	public Mono<ChatResponse> chat(ChatRequest request) {
 		return Mono.fromCallable(() -> chatClient.prompt()
+				.advisors(AdvisorParams.toolCallingAdvisorAutoRegister(false))
 				.user(request.message())
 				.call()
 				.content())
