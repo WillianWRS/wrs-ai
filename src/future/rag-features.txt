@@ -1,0 +1,307 @@
+// Código preservado para implementação futura (RAG, documentos, busca semântica).
+// Copie de volta para src/main/java quando reativar as dependências no pom.xml.
+
+// --- config/AiConfig.java ---
+/*
+package wrs.ai.config;
+
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.client.advisor.vectorstore.QuestionAnswerAdvisor;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration(proxyBeanMethods = false)
+public class AiConfig {
+
+	@Bean
+	ChatClient chatClient(ChatModel chatModel) {
+		return ChatClient.builder(chatModel).build();
+	}
+
+	@Bean
+	@ConditionalOnBean(VectorStore.class)
+	ChatClient ragChatClient(ChatModel chatModel, VectorStore vectorStore) {
+		return ChatClient.builder(chatModel)
+				.defaultAdvisors(QuestionAnswerAdvisor.builder(vectorStore).build())
+				.build();
+	}
+
+}
+*/
+
+// --- controller/RagController.java ---
+/*
+package wrs.ai.controller;
+
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import reactor.core.publisher.Mono;
+import wrs.ai.dto.ChatRequest;
+import wrs.ai.dto.ChatResponse;
+import wrs.ai.service.RagService;
+
+@RestController
+@RequestMapping("/api/rag")
+@ConditionalOnBean(VectorStore.class)
+public class RagController {
+
+	private final RagService ragService;
+
+	public RagController(RagService ragService) {
+		this.ragService = ragService;
+	}
+
+	@PostMapping("/chat")
+	public Mono<ChatResponse> chat(@RequestBody ChatRequest request) {
+		return ragService.chat(request);
+	}
+
+}
+*/
+
+// --- controller/DocumentController.java ---
+/*
+package wrs.ai.controller;
+
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import reactor.core.publisher.Mono;
+import wrs.ai.dto.DocumentRequest;
+import wrs.ai.dto.DocumentResponse;
+import wrs.ai.service.DocumentService;
+
+@RestController
+@RequestMapping("/api/documents")
+@ConditionalOnBean(VectorStore.class)
+public class DocumentController {
+
+	private final DocumentService documentService;
+
+	public DocumentController(DocumentService documentService) {
+		this.documentService = documentService;
+	}
+
+	@PostMapping
+	public Mono<DocumentResponse> ingest(@RequestBody DocumentRequest request) {
+		return documentService.ingest(request);
+	}
+
+}
+*/
+
+// --- controller/SearchController.java ---
+/*
+package wrs.ai.controller;
+
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import reactor.core.publisher.Mono;
+import wrs.ai.dto.SemanticSearchRequest;
+import wrs.ai.dto.SemanticSearchResponse;
+import wrs.ai.service.SearchService;
+
+@RestController
+@RequestMapping("/api/search")
+@ConditionalOnBean(VectorStore.class)
+public class SearchController {
+
+	private final SearchService searchService;
+
+	public SearchController(SearchService searchService) {
+		this.searchService = searchService;
+	}
+
+	@PostMapping
+	public Mono<SemanticSearchResponse> search(@RequestBody SemanticSearchRequest request) {
+		return searchService.search(request);
+	}
+
+}
+*/
+
+// --- service/RagService.java ---
+/*
+package wrs.ai.service;
+
+import org.springframework.ai.chat.client.AdvisorParams;
+import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.stereotype.Service;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import wrs.ai.dto.ChatRequest;
+import wrs.ai.dto.ChatResponse;
+
+@Service
+@ConditionalOnBean(name = "ragChatClient")
+public class RagService {
+
+	private final ChatClient ragChatClient;
+
+	public RagService(@Qualifier("ragChatClient") ChatClient ragChatClient) {
+		this.ragChatClient = ragChatClient;
+	}
+
+	public Mono<ChatResponse> chat(ChatRequest request) {
+		return Mono.fromCallable(() -> ragChatClient.prompt()
+				.advisors(AdvisorParams.toolCallingAdvisorAutoRegister(false))
+				.user(request.message())
+				.call()
+				.content())
+				.map(ChatResponse::new)
+				.subscribeOn(Schedulers.boundedElastic());
+	}
+
+}
+*/
+
+// --- service/DocumentService.java ---
+/*
+package wrs.ai.service;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+import org.springframework.ai.document.Document;
+import org.springframework.ai.reader.markdown.MarkdownDocumentReader;
+import org.springframework.ai.reader.markdown.config.MarkdownDocumentReaderConfig;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import wrs.ai.dto.DocumentRequest;
+import wrs.ai.dto.DocumentResponse;
+
+@Service
+@ConditionalOnBean(VectorStore.class)
+public class DocumentService {
+
+	private final VectorStore vectorStore;
+
+	public DocumentService(VectorStore vectorStore) {
+		this.vectorStore = vectorStore;
+	}
+
+	public Mono<DocumentResponse> ingest(DocumentRequest request) {
+		return Mono.fromCallable(() -> {
+			String filename = StringUtils.hasText(request.filename()) ? request.filename() : "document.md";
+			var resource = new ByteArrayResource(request.content().getBytes(StandardCharsets.UTF_8)) {
+				@Override
+				public String getFilename() {
+					return filename;
+				}
+			};
+			var config = MarkdownDocumentReaderConfig.builder()
+					.withAdditionalMetadata("filename", filename)
+					.build();
+			List<Document> documents = new MarkdownDocumentReader(resource, config).get();
+			vectorStore.add(documents);
+			return new DocumentResponse(documents.size());
+		}).subscribeOn(Schedulers.boundedElastic());
+	}
+
+}
+*/
+
+// --- service/SearchService.java ---
+/*
+package wrs.ai.service;
+
+import java.util.List;
+
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.stereotype.Service;
+
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import wrs.ai.dto.SemanticSearchRequest;
+import wrs.ai.dto.SemanticSearchResponse;
+
+@Service
+@ConditionalOnBean(VectorStore.class)
+public class SearchService {
+
+	private final VectorStore vectorStore;
+
+	public SearchService(VectorStore vectorStore) {
+		this.vectorStore = vectorStore;
+	}
+
+	public Mono<SemanticSearchResponse> search(SemanticSearchRequest request) {
+		int topK = request.topK() != null ? request.topK() : SearchRequest.DEFAULT_TOP_K;
+
+		return Mono.fromCallable(() -> {
+			var searchRequest = SearchRequest.builder()
+					.query(request.query())
+					.topK(topK)
+					.build();
+			List<String> results = vectorStore.similaritySearch(searchRequest).stream()
+					.map(Document::getText)
+					.toList();
+			return new SemanticSearchResponse(results);
+		}).subscribeOn(Schedulers.boundedElastic());
+	}
+
+}
+*/
+
+// --- dto/DocumentRequest.java ---
+/*
+package wrs.ai.dto;
+
+public record DocumentRequest(String content, String filename) {
+}
+*/
+
+// --- dto/DocumentResponse.java ---
+/*
+package wrs.ai.dto;
+
+public record DocumentResponse(int ingested) {
+}
+*/
+
+// --- dto/SemanticSearchRequest.java ---
+/*
+package wrs.ai.dto;
+
+public record SemanticSearchRequest(String query, Integer topK) {
+}
+*/
+
+// --- dto/SemanticSearchResponse.java ---
+/*
+package wrs.ai.dto;
+
+import java.util.List;
+
+public record SemanticSearchResponse(List<String> results) {
+}
+*/

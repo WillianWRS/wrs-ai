@@ -1,21 +1,4 @@
 services:
-  postgres:
-    image: pgvector/pgvector:pg16
-    container_name: ai-postgres
-    environment:
-      POSTGRES_DB: ai
-      POSTGRES_USER: ai
-      POSTGRES_PASSWORD: ai
-    ports:
-      - "5432:5432"
-    volumes:
-      - ai-postgres-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ai -d ai"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
   api:
     build: .
     container_name: wrs-ai-api
@@ -24,13 +7,26 @@ services:
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: docker
       GOOGLE_API_KEY: ${GOOGLE_API_KEY}
       SPRING_AI_GOOGLE_GENAI_API_KEY: ${GOOGLE_API_KEY}
-      SPRING_AI_GOOGLE_GENAI_EMBEDDING_API_KEY: ${GOOGLE_API_KEY}
-    depends_on:
-      postgres:
-        condition: service_healthy
 
-volumes:
-  ai-postgres-data:
+# Futuro: Postgres + pgvector para RAG e busca semântica
+#  postgres:
+#    image: pgvector/pgvector:pg16
+#    container_name: ai-postgres
+#    environment:
+#      POSTGRES_DB: ai
+#      POSTGRES_USER: ai
+#      POSTGRES_PASSWORD: ai
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - ai-postgres-data:/var/lib/postgresql/data
+#    healthcheck:
+#      test: ["CMD-SHELL", "pg_isready -U ai -d ai"]
+#      interval: 5s
+#      timeout: 5s
+#      retries: 5
+#
+#volumes:
+#  ai-postgres-data:

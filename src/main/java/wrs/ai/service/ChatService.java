@@ -1,8 +1,7 @@
 package wrs.ai.service;
 
-import org.springframework.ai.chat.client.AdvisorParams;
-import org.springframework.ai.chat.client.ChatClient;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.ai.chat.model.ChatModel;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.stereotype.Service;
 
 import reactor.core.publisher.Mono;
@@ -13,19 +12,18 @@ import wrs.ai.dto.ChatResponse;
 @Service
 public class ChatService {
 
-	private final ChatClient chatClient;
+	private final ChatModel chatModel;
 
-	public ChatService(@Qualifier("chatClient") ChatClient chatClient) {
-		this.chatClient = chatClient;
+	public ChatService(ChatModel chatModel) {
+		this.chatModel = chatModel;
 	}
 
 	public Mono<ChatResponse> chat(ChatRequest request) {
-		return Mono.fromCallable(() -> chatClient.prompt()
-				.advisors(AdvisorParams.toolCallingAdvisorAutoRegister(false))
-				.user(request.message())
-				.call()
-				.content())
-				.map(ChatResponse::new)
+		return Mono.fromCallable(() -> new ChatResponse(
+				chatModel.call(new Prompt(request.message()))
+						.getResult()
+						.getOutput()
+						.getText()))
 				.subscribeOn(Schedulers.boundedElastic());
 	}
 

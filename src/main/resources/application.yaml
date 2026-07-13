@@ -2,24 +2,24 @@ spring:
   application:
     name: ai
 
-  datasource:
-    url: jdbc:postgresql://localhost:5432/ai
-    username: ai
-    password: ai
-
   ai:
-    chat:
-      client:
-        tool-calling:
-          enabled: false
     google:
       genai:
         api-key: ${GOOGLE_API_KEY}
-        embedding:
-          api-key: ${GOOGLE_API_KEY}
         chat:
           model: gemini-2.0-flash-lite
           enable-cached-content: false
-    vectorstore:
-      pgvector:
-        initialize-schema: true
+
+# Futuro: Postgres + pgvector + embeddings para RAG
+#  datasource:
+#    url: jdbc:postgresql://localhost:5432/ai
+#    username: ai
+#    password: ai
+#  ai:
+#    google:
+#      genai:
+#        embedding:
+#          api-key: ${GOOGLE_API_KEY}
+#    vectorstore:
+#      pgvector:
+#        initialize-schema: true
