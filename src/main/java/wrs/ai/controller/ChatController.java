@@ -1,13 +1,15 @@
 package wrs.ai.controller;
 
+import org.springframework.http.MediaType;
+import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import reactor.core.publisher.Mono;
+import reactor.core.publisher.Flux;
 import wrs.ai.dto.ChatRequest;
-import wrs.ai.dto.ChatResponse;
+import wrs.ai.dto.ChatStreamEvent;
 import wrs.ai.service.ChatService;
 
 @RestController
@@ -20,9 +22,11 @@ public class ChatController {
 		this.chatService = chatService;
 	}
 
-	@PostMapping
-	public Mono<ChatResponse> chat(@RequestBody ChatRequest request) {
-		return chatService.chat(request);
+	@PostMapping(
+			consumes = MediaType.APPLICATION_JSON_VALUE,
+			produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+	public Flux<ServerSentEvent<ChatStreamEvent>> stream(@RequestBody ChatRequest request) {
+		return chatService.stream(request);
 	}
 
 }
